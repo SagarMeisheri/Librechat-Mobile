@@ -62,9 +62,7 @@ Switchboard is a third-party native client (Android/iOS) for users who operate t
 HOW TO TEST IMMEDIATELY (DEMO SERVER):
 To ensure you can test all features without setting up a backend:
 1. On the opening screen, tap "Try with Demo Server" (or enter: https://demo.switchboard.chat).
-2. On the login screen, enter our test credentials:
-   - Email: appreview@switchboard.chat
-   - Password: [SECURE_PASSWORD]
+2. On the login screen, tap "Sign In as Reviewer" (or enter credentials: Email: appreview@switchboard.chat / Password: [SECURE_PASSWORD]).
 3. The account is pre-populated with sample conversations showcasing:
    - Live AI streaming
    - Interactive Mermaid diagrams and code blocks
@@ -88,5 +86,27 @@ If you have any questions or require custom test scenarios, please contact us im
 | **VAL-01** | App title on store listings does not impersonate official project ("Switchboard for LibreChat"). | Text audit | [ ] |
 | **VAL-02** | Description begins with the non-affiliation disclaimer. | Store listing preview | [ ] |
 | **VAL-03** | Age rating questionnaire outputs 17+ on App Store Connect. | Questionnaire dry-run | [ ] |
-| **VAL-04** | Reviewer credentials verified active against the live demo server. | Pre-submission login test | [ ] |
+| **VAL-04** | Reviewer credentials verified active against the live demo server via 1-tap login. | Pre-submission login test | [ ] |
 | **VAL-05** | Screenshots depict actual app running without promotional mockups hiding core UI. | Screenshot review | [ ] |
+| **VAL-06** | Demo backend returns `200 OK` on IPv6-only network. | `curl -6 -I https://demo.switchboard.chat/api/config` | [ ] |
+
+---
+
+## 6. Backend Connectivity & Protocol Requirements
+
+### 6.1 IPv6 Transport Contract (Apple App Store Review Requirement)
+* Apple evaluates apps in a dedicated NAT64/DNS64 IPv6-only test environment.
+* The backend demo domain `demo.switchboard.chat` must satisfy:
+  * Proper dual-stack DNS configuration (`A` and `AAAA` records) or synthesize clean IPv6 addresses under DNS64.
+  * No hardcoded IPv4 address literals anywhere in the network layer or startup configs.
+  * Validation Command:
+    ```bash
+    curl -6 -v https://demo.switchboard.chat/api/config
+    ```
+
+### 6.2 TLS & Cipher Suite Specifications
+* **Transport Security**: TLS 1.2 or TLS 1.3 mandated by Apple App Transport Security (ATS).
+* **Certificate Authority**: Must use a publicly trusted Certificate Authority (e.g. Let's Encrypt, Cloudflare, DigiCert). Self-signed certificates will trigger immediate ATS handshake blocks.
+* **HTTP/2 Support**: Recommended to enable HTTP/2 on reverse proxy (Nginx / Cloudflare) to ensure fast SSE streaming delivery of assistant messages during review.
+
+

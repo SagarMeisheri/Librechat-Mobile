@@ -17,14 +17,15 @@ Achieve formal approval and unblocked distribution on:
 
 ### Boundary 1: Zero Reviewer Friction (Guideline 2.1)
 * The app must never leave a reviewer stranded on an empty server URL screen.
-* Reviewers must be able to explore the full native UI (chat, streaming, artifacts, code blocks, settings) within 1 tap using a managed demo instance or guest sandbox.
+* Reviewers must be able to explore the full native UI (chat, streaming, artifacts, code blocks, settings) within 1 tap using a managed demo instance with pre-configured single-tap reviewer login.
 
 ### Boundary 2: AI Content Moderation & Abuse Reporting (Apple 1.2 & Google GenAI Policy)
 * All AI outputs must be treated as synthetic user content.
 * Users must possess a prominent, direct mechanism to report/flag abusive, offensive, or hazardous AI responses directly from the message bubble without leaving the application.
 
-### Boundary 3: Unambiguous Legal & Privacy Disclosures (Apple 1.2, 5.1.1 & Google User Data)
-* An End User License Agreement (EULA) with explicit zero tolerance for objectionable content must be acknowledged before active interaction.
+### Boundary 3: Dual-Tier Legal & Privacy Disclosures (Apple 1.2, 5.1.1 & Google User Data)
+* An End User License Agreement (EULA) for the Switchboard client with explicit zero tolerance for objectionable content must be acknowledged before active interaction.
+* Server-level Terms of Service and Privacy Policies configured in LibreChat must be respected and gated via native acceptance flows.
 * Clear disclosures must be provided regarding prompt forwarding to third-party AI models (OpenAI, Anthropic, Google, etc.).
 * Accessible links to both Privacy Policy and Terms of Service must exist in-app and on the public web.
 
