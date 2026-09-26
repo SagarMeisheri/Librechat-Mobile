@@ -7,74 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AAA00001 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00001; };
-		AAA00005 /* KoinHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00005; };
-		AAA00007 /* SharedFrameworkTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00007; };
-		AAA0000B /* ComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB0000B; };
-		AAA00013 /* PrefetchBackgroundTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013; };
-		AAA0000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBB0000C; };
-		AAA00010 /* Shared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBB00010; };
+		AAA00001 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00001 /* iOSApp.swift */; };
+		AAA00005 /* KoinHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00005 /* KoinHelper.swift */; };
+		AAA00007 /* SharedFrameworkTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00007 /* SharedFrameworkTest.swift */; };
+		AAA0000B /* ComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB0000B /* ComposeView.swift */; };
+		AAA0000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBB0000C /* Assets.xcassets */; };
+		AAA00010 /* Shared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBB00010 /* Shared.framework */; };
+		AAA00013 /* PrefetchBackgroundTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013 /* PrefetchBackgroundTasks.swift */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		SSS00004 /* Compile Kotlin Framework */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Compile Kotlin Framework";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
-		};
-		SSS00002 /* Stamp Version from version.properties */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/../version.properties",
-			);
-			name = "Stamp Version from version.properties";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Stamp the iOS bundle version from version.properties, the single source of\n# truth shared with Android. App Store Connect restricts CFBundleShortVersionString\n# to dot-separated integers, so it gets the numeric calver core (YYYY.MM.PATCH,\n# any -rcN suffix stripped); the FULL versionName (rc suffix intact) is stamped\n# into the custom SwitchboardVersionName key that AppInfo.versionName displays\n# (same pattern as GitSHA). A derived versionCode (YEAR*10000 + MONTH*100 + PATCH)\n# -> CFBundleVersion, using the same formula as Android so both platforms report\n# the same version. App Store Connect also rejects a REUSED CFBundleVersion within\n# one version train (rc2 after rc1, or a re-upload), so the store upload job sets\n# IOS_BUILD_NUMBER_SUFFIX (its workflow run number) to stamp YYYYMMPP.N instead —\n# unique per upload, still ordered. Unset locally and for the unsigned sideload\n# IPA, which keep plain YYYYMMPP. This runs as the last build phase (after\n# Info.plist is in the bundle, before codesign), so the values always reflect\n# version.properties regardless of the committed Info.plist literals.\nset -eu\nPROPS=\"$SRCROOT/../version.properties\"\nif [ ! -f \"$PROPS\" ]; then\n    echo \"error: version.properties not found at $PROPS\"\n    exit 1\nfi\nVERSION_NAME=$(grep -E '^versionName=' \"$PROPS\" | cut -d'=' -f2 | tr -d '[:space:]')\nif [ -z \"$VERSION_NAME\" ]; then\n    echo \"error: versionName missing or malformed in $PROPS\"\n    exit 1\nfi\nCORE=${VERSION_NAME%%-*}\n# Split into YEAR/MONTH/PATCH on '.'; any missing component defaults to 0.\nIFS=.\nset -f\nset -- $CORE\nset +f\nunset IFS\nYEAR=${1:-0}\nMONTH=${2:-0}\nPATCH=${3:-0}\n# Treat any empty or non-numeric component as 0, the same way Android parses it.\ncase \"$YEAR\" in \"\"|*[!0-9]*) YEAR=0 ;; esac\ncase \"$MONTH\" in \"\"|*[!0-9]*) MONTH=0 ;; esac\ncase \"$PATCH\" in \"\"|*[!0-9]*) PATCH=0 ;; esac\nif [ \"$MONTH\" -gt 99 ] || [ \"$PATCH\" -gt 99 ]; then\n    echo \"error: versionName '$VERSION_NAME' exceeds the YYYYMMPP scheme (MONTH/PATCH must be <= 99)\"\n    exit 1\nfi\n# Force base 10 so a zero-padded component (e.g. 06) is not interpreted as octal.\nVERSION_CODE=$((10#$YEAR * 10000 + 10#$MONTH * 100 + 10#$PATCH))\nBUILD_NUMBER=$VERSION_CODE\nif [ -n \"${IOS_BUILD_NUMBER_SUFFIX:-}\" ]; then\n    case \"$IOS_BUILD_NUMBER_SUFFIX\" in *[!0-9]*)\n        echo \"error: IOS_BUILD_NUMBER_SUFFIX must be numeric, got '$IOS_BUILD_NUMBER_SUFFIX'\"\n        exit 1 ;;\n    esac\n    BUILD_NUMBER=\"$VERSION_CODE.$IOS_BUILD_NUMBER_SUFFIX\"\nfi\nPLIST=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $CORE\" \"$PLIST\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $BUILD_NUMBER\" \"$PLIST\"\n/usr/libexec/PlistBuddy -c \"Set :SwitchboardVersionName $VERSION_NAME\" \"$PLIST\"\necho \"Stamped iOS version $VERSION_NAME (marketing $CORE, build $BUILD_NUMBER) into $PLIST\"\n";
-		};
-		SSS00003 /* Stamp Git SHA */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Stamp Git SHA";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Bake the short git SHA into the built Info.plist so AppInfo.gitSha reports the\n# source commit (used in diagnostic startup headers and Settings -> About). Mirrors\n# the Android BuildConfig.GIT_SHA. Runs after Info.plist is in the bundle. Never fails\n# the build: a missing git checkout falls back to 'unknown'.\nset -u\nGIT_SHA=$(git -C \"$SRCROOT/..\" rev-parse --short=8 HEAD 2>/dev/null || echo unknown)\nPLIST=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\n/usr/libexec/PlistBuddy -c \"Set :GitSHA $GIT_SHA\" \"$PLIST\" || /usr/libexec/PlistBuddy -c \"Add :GitSHA string $GIT_SHA\" \"$PLIST\"\necho \"Stamped GitSHA $GIT_SHA into $PLIST\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
-/* Begin PBXResourcesBuildPhase section */
-		RRR00001 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AAA0000C /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		BBB00001 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
@@ -82,9 +22,9 @@
 		BBB00007 /* SharedFrameworkTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFrameworkTest.swift; sourceTree = "<group>"; };
 		BBB00008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BBB0000B /* ComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeView.swift; sourceTree = "<group>"; };
-		BBB00013 /* PrefetchBackgroundTasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefetchBackgroundTasks.swift; sourceTree = "<group>"; };
 		BBB0000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		BBB00010 /* Shared.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Shared.framework; path = "../shared/build/bin/iosSimulatorArm64/debugFramework/Shared.framework"; sourceTree = "<group>"; };
+		BBB00010 /* Shared.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Shared.framework; path = ../shared/build/bin/iosSimulatorArm64/debugFramework/Shared.framework; sourceTree = "<group>"; };
+		BBB00013 /* PrefetchBackgroundTasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefetchBackgroundTasks.swift; sourceTree = "<group>"; };
 		DDD00001 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -170,7 +110,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2700;
 			};
 			buildConfigurationList = HHH00001 /* Build configuration list for PBXProject "iosApp" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -189,6 +129,66 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		RRR00001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAA0000C /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		SSS00002 /* Stamp Version from version.properties */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../version.properties",
+			);
+			name = "Stamp Version from version.properties";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Stamp the iOS bundle version from version.properties, the single source of\n# truth shared with Android. App Store Connect restricts CFBundleShortVersionString\n# to dot-separated integers, so it gets the numeric calver core (YYYY.MM.PATCH,\n# any -rcN suffix stripped); the FULL versionName (rc suffix intact) is stamped\n# into the custom SwitchboardVersionName key that AppInfo.versionName displays\n# (same pattern as GitSHA). A derived versionCode (YEAR*10000 + MONTH*100 + PATCH)\n# -> CFBundleVersion, using the same formula as Android so both platforms report\n# the same version. App Store Connect also rejects a REUSED CFBundleVersion within\n# one version train (rc2 after rc1, or a re-upload), so the store upload job sets\n# IOS_BUILD_NUMBER_SUFFIX (its workflow run number) to stamp YYYYMMPP.N instead —\n# unique per upload, still ordered. Unset locally and for the unsigned sideload\n# IPA, which keep plain YYYYMMPP. This runs as the last build phase (after\n# Info.plist is in the bundle, before codesign), so the values always reflect\n# version.properties regardless of the committed Info.plist literals.\nset -eu\nPROPS=\"$SRCROOT/../version.properties\"\nif [ ! -f \"$PROPS\" ]; then\n    echo \"error: version.properties not found at $PROPS\"\n    exit 1\nfi\nVERSION_NAME=$(grep -E '^versionName=' \"$PROPS\" | cut -d'=' -f2 | tr -d '[:space:]')\nif [ -z \"$VERSION_NAME\" ]; then\n    echo \"error: versionName missing or malformed in $PROPS\"\n    exit 1\nfi\nCORE=${VERSION_NAME%%-*}\n# Split into YEAR/MONTH/PATCH on '.'; any missing component defaults to 0.\nIFS=.\nset -f\nset -- $CORE\nset +f\nunset IFS\nYEAR=${1:-0}\nMONTH=${2:-0}\nPATCH=${3:-0}\n# Treat any empty or non-numeric component as 0, the same way Android parses it.\ncase \"$YEAR\" in \"\"|*[!0-9]*) YEAR=0 ;; esac\ncase \"$MONTH\" in \"\"|*[!0-9]*) MONTH=0 ;; esac\ncase \"$PATCH\" in \"\"|*[!0-9]*) PATCH=0 ;; esac\nif [ \"$MONTH\" -gt 99 ] || [ \"$PATCH\" -gt 99 ]; then\n    echo \"error: versionName '$VERSION_NAME' exceeds the YYYYMMPP scheme (MONTH/PATCH must be <= 99)\"\n    exit 1\nfi\n# Force base 10 so a zero-padded component (e.g. 06) is not interpreted as octal.\nVERSION_CODE=$((10#$YEAR * 10000 + 10#$MONTH * 100 + 10#$PATCH))\nBUILD_NUMBER=$VERSION_CODE\nif [ -n \"${IOS_BUILD_NUMBER_SUFFIX:-}\" ]; then\n    case \"$IOS_BUILD_NUMBER_SUFFIX\" in *[!0-9]*)\n        echo \"error: IOS_BUILD_NUMBER_SUFFIX must be numeric, got '$IOS_BUILD_NUMBER_SUFFIX'\"\n        exit 1 ;;\n    esac\n    BUILD_NUMBER=\"$VERSION_CODE.$IOS_BUILD_NUMBER_SUFFIX\"\nfi\nPLIST=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $CORE\" \"$PLIST\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $BUILD_NUMBER\" \"$PLIST\"\n/usr/libexec/PlistBuddy -c \"Set :SwitchboardVersionName $VERSION_NAME\" \"$PLIST\"\necho \"Stamped iOS version $VERSION_NAME (marketing $CORE, build $BUILD_NUMBER) into $PLIST\"\n";
+		};
+		SSS00003 /* Stamp Git SHA */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Stamp Git SHA";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Bake the short git SHA into the built Info.plist so AppInfo.gitSha reports the\n# source commit (used in diagnostic startup headers and Settings -> About). Mirrors\n# the Android BuildConfig.GIT_SHA. Runs after Info.plist is in the bundle. Never fails\n# the build: a missing git checkout falls back to 'unknown'.\nset -u\nGIT_SHA=$(git -C \"$SRCROOT/..\" rev-parse --short=8 HEAD 2>/dev/null || echo unknown)\nPLIST=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\n/usr/libexec/PlistBuddy -c \"Set :GitSHA $GIT_SHA\" \"$PLIST\" || /usr/libexec/PlistBuddy -c \"Add :GitSHA string $GIT_SHA\" \"$PLIST\"\necho \"Stamped GitSHA $GIT_SHA into $PLIST\"\n";
+		};
+		SSS00004 /* Compile Kotlin Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Compile Kotlin Framework";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		III00001 /* Sources */ = {
@@ -214,20 +214,46 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -241,13 +267,39 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
@@ -262,7 +314,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 103;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = HBF46H3PTX;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -271,6 +323,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -280,7 +333,7 @@
 					"$(inherited)",
 					"-lsqlite3",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.garfiec.librechat.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sagarmeisheri.librechat.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -295,7 +348,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 103;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = HBF46H3PTX;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -304,6 +357,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -313,7 +367,7 @@
 					"$(inherited)",
 					"-lsqlite3",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.garfiec.librechat.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sagarmeisheri.librechat.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -342,7 +396,6 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = JJJ00001 /* Project object */;
 }
